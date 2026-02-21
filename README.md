@@ -1,4 +1,4 @@
-# l0-wb-techno-school-go
+# demo_service_with_kafka
 
 A demo microservice in Go that receives order data from Kafka, stores it in PostgreSQL, and caches it in memory for fast delivery via an HTTP API and a simple web page.
 
