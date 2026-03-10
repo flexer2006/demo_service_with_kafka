@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/adapters/db/postgres/connect"
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/domain"
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/logger"
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/ports"
+	"github.com/flexer2006/orders-api/internal/adapters/db/postgres/connect"
+	"github.com/flexer2006/orders-api/internal/domain"
+	"github.com/flexer2006/orders-api/internal/logger"
+	"github.com/flexer2006/orders-api/internal/ports"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -126,10 +126,10 @@ type orderRepository struct {
 }
 
 func NewOrderRepository(db *connect.DB, log logger.Logger) ports.OrderRepository {
-	return &orderRepository{
+	return new(orderRepository{
 		db:  db,
 		log: log,
-	}
+	})
 }
 
 func validateOrder(order *domain.Order) error {
@@ -152,7 +152,6 @@ func (r *orderRepository) SaveOrderTx(ctx context.Context, order *domain.Order) 
 		r.log.Warn("invalid order data, skipping", "order_uid", order.OrderUID, "error", err)
 		return err
 	}
-
 	transaction, err := r.db.Pool().Begin(ctx)
 	if err != nil {
 		r.log.Error("failed to begin transaction", "order_uid", order.OrderUID, "error", err)
@@ -163,16 +162,13 @@ func (r *orderRepository) SaveOrderTx(ctx context.Context, order *domain.Order) 
 			r.log.Error("failed to rollback transaction", "order_uid", order.OrderUID, "error", rollbackErr)
 		}
 	}()
-
 	if err := r.saveOrderInTx(ctx, transaction, order); err != nil {
 		return err
 	}
-
 	if err = transaction.Commit(ctx); err != nil {
 		r.log.Error("failed to commit transaction", "order_uid", order.OrderUID, "error", err)
 		return fmt.Errorf("commit transaction: %w", err)
 	}
-
 	r.log.Info("order saved successfully", "order_uid", order.OrderUID, "items_count", len(order.Items))
 	return nil
 }
@@ -183,7 +179,6 @@ func (r *orderRepository) saveOrderInTx(ctx context.Context, transaction Queryab
 		r.log.Error("failed to marshal order to JSON", "order_uid", order.OrderUID, "error", err)
 		return fmt.Errorf("marshal order to JSON: %w", err)
 	}
-
 	_, err = transaction.Exec(ctx, insertOrderSQL,
 		order.OrderUID, order.TrackNumber, order.Entry, order.Locale, order.InternalSignature,
 		order.CustomerID, order.DeliveryService, order.Shardkey, order.SmID, order.DateCreated,
@@ -193,7 +188,6 @@ func (r *orderRepository) saveOrderInTx(ctx context.Context, transaction Queryab
 		r.log.Error("failed to upsert order", "order_uid", order.OrderUID, "error", err)
 		return fmt.Errorf("upsert order: %w", err)
 	}
-
 	if order.Delivery != nil {
 		_, err = transaction.Exec(ctx, insertDeliverySQL,
 			order.OrderUID, order.Delivery.Name, order.Delivery.Phone, order.Delivery.Zip,
@@ -204,7 +198,6 @@ func (r *orderRepository) saveOrderInTx(ctx context.Context, transaction Queryab
 			return fmt.Errorf("upsert delivery: %w", err)
 		}
 	}
-
 	if order.Payment != nil {
 		_, err = transaction.Exec(ctx, insertPaymentSQL,
 			order.OrderUID, order.Payment.Transaction, order.Payment.RequestID, order.Payment.Currency,
@@ -216,19 +209,16 @@ func (r *orderRepository) saveOrderInTx(ctx context.Context, transaction Queryab
 			return fmt.Errorf("upsert payment: %w", err)
 		}
 	}
-
 	_, err = transaction.Exec(ctx, deleteItemsSQL, order.OrderUID)
 	if err != nil {
 		r.log.Error("failed to delete old items", "order_uid", order.OrderUID, "error", err)
 		return fmt.Errorf("delete old items: %w", err)
 	}
-
 	if len(order.Items) > 0 {
 		if err := r.insertItemsBatch(ctx, transaction, order.OrderUID, order.Items); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -238,7 +228,6 @@ func (r *orderRepository) insertItemsBatch(ctx context.Context, transaction Quer
 		"name", "sale", "size", "total_price", "nm_id",
 		"brand", "status",
 	}
-
 	rows := make([][]any, len(items))
 	for i, item := range items {
 		rows[i] = []any{
@@ -247,32 +236,28 @@ func (r *orderRepository) insertItemsBatch(ctx context.Context, transaction Quer
 			item.Brand, item.Status,
 		}
 	}
-
 	if _, err := transaction.CopyFrom(ctx, pgx.Identifier{"items"}, columns, pgx.CopyFromRows(rows)); err != nil {
 		r.log.Debug("CopyFrom failed, using fallback INSERT", "order_uid", orderUID, "error", err)
 	} else {
 		return nil
 	}
-
 	batchSQL, valueArgs := r.buildBatchInsertSQL(orderUID, items)
 	if _, err := transaction.Exec(ctx, batchSQL, valueArgs...); err != nil {
 		r.log.Error("failed to batch insert items (fallback)", "order_uid", orderUID, "items_count", len(items), "error", err)
 		return fmt.Errorf("batch insert items: %w", err)
 	}
-
 	return nil
 }
 
 func (r *orderRepository) buildBatchInsertSQL(orderUID string, items []domain.Item) (string, []any) {
 	var valueStrings strings.Builder
 	valueArgs := make([]any, 0, len(items)*12)
-
 	for i, item := range items {
 		if i > 0 {
 			valueStrings.WriteString(", ")
 		}
-		valueStrings.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6, i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12))
+		fmt.Fprintf(&valueStrings, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6, i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12)
 
 		valueArgs = append(valueArgs,
 			orderUID, item.ChrtID, item.TrackNumber, item.Price, item.RID,
@@ -280,9 +265,7 @@ func (r *orderRepository) buildBatchInsertSQL(orderUID string, items []domain.It
 			item.Brand, item.Status,
 		)
 	}
-
 	batchSQL := fmt.Sprintf(insertItemsBaseSQL, valueStrings.String())
-
 	return batchSQL, valueArgs
 }
 
@@ -290,10 +273,8 @@ func (r *orderRepository) GetOrder(ctx context.Context, orderUID string) (*domai
 	if orderUID == "" {
 		return nil, ErrEmptyOrderUID
 	}
-
 	var order domain.Order
 	var rawData []byte
-
 	err := r.db.Pool().QueryRow(ctx, selectOrderSQL, orderUID).Scan(
 		&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature,
 		&order.CustomerID, &order.DeliveryService, &order.Shardkey, &order.SmID, &order.DateCreated,
@@ -307,27 +288,22 @@ func (r *orderRepository) GetOrder(ctx context.Context, orderUID string) (*domai
 		r.log.Error("failed to get order", "order_uid", orderUID, "error", err)
 		return nil, fmt.Errorf("get order: %w", err)
 	}
-
 	order.Raw = rawData
-
 	if delivery, err := r.getDelivery(ctx, orderUID); err != nil {
 		return nil, err
 	} else if delivery != nil {
 		order.Delivery = delivery
 	}
-
 	if payment, err := r.getPayment(ctx, orderUID); err != nil {
 		return nil, err
 	} else if payment != nil {
 		order.Payment = payment
 	}
-
 	items, err := r.getItems(ctx, orderUID)
 	if err != nil {
 		return nil, err
 	}
 	order.Items = items
-
 	r.log.Debug("order retrieved successfully", "order_uid", orderUID, "items_count", len(items))
 	return &order, nil
 }
@@ -345,7 +321,6 @@ func (r *orderRepository) getDelivery(ctx context.Context, orderUID string) (*do
 		r.log.Error("failed to get delivery", "order_uid", orderUID, "error", err)
 		return nil, fmt.Errorf("get delivery: %w", err)
 	}
-
 	delivery.OrderUID = orderUID
 	return &delivery, nil
 }
@@ -364,7 +339,6 @@ func (r *orderRepository) getPayment(ctx context.Context, orderUID string) (*dom
 		r.log.Error("failed to get payment", "order_uid", orderUID, "error", err)
 		return nil, fmt.Errorf("get payment: %w", err)
 	}
-
 	payment.OrderUID = orderUID
 	return &payment, nil
 }
@@ -376,7 +350,6 @@ func (r *orderRepository) getItems(ctx context.Context, orderUID string) ([]doma
 		return nil, fmt.Errorf("get items: %w", err)
 	}
 	defer rows.Close()
-
 	var items []domain.Item
 	for rows.Next() {
 		var item domain.Item
@@ -396,7 +369,6 @@ func (r *orderRepository) getItems(ctx context.Context, orderUID string) ([]doma
 		r.log.Error("failed to iterate items", "order_uid", orderUID, "error", err)
 		return nil, fmt.Errorf("iterate items: %w", err)
 	}
-
 	return items, nil
 }
 
@@ -404,14 +376,12 @@ func (r *orderRepository) ListRecent(ctx context.Context, limit int) ([]*domain.
 	if limit <= 0 {
 		limit = 100
 	}
-
 	rows, err := r.db.Pool().Query(ctx, selectRecentOrderUIDsSQL, limit)
 	if err != nil {
 		r.log.Error("failed to get recent order UIDs", "limit", limit, "error", err)
 		return nil, fmt.Errorf("get recent order UIDs: %w", err)
 	}
 	defer rows.Close()
-
 	var orderUIDs []string
 	for rows.Next() {
 		var orderUID string
@@ -421,12 +391,10 @@ func (r *orderRepository) ListRecent(ctx context.Context, limit int) ([]*domain.
 		}
 		orderUIDs = append(orderUIDs, orderUID)
 	}
-
 	if err := rows.Err(); err != nil {
 		r.log.Error("failed to iterate order UIDs", "error", err)
 		return nil, fmt.Errorf("iterate order UIDs: %w", err)
 	}
-
 	var orders []*domain.Order
 	for _, orderUID := range orderUIDs {
 		order, err := r.GetOrder(ctx, orderUID)
@@ -436,7 +404,6 @@ func (r *orderRepository) ListRecent(ctx context.Context, limit int) ([]*domain.
 		}
 		orders = append(orders, order)
 	}
-
 	r.log.Info("recent orders retrieved", "requested", limit, "found", len(orderUIDs), "returned", len(orders))
 	return orders, nil
 }

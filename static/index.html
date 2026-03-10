@@ -1,20 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en,ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Order Service</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-        header { text-align: center; margin-bottom: 20px; }
-        form { display: flex; flex-direction: column; max-width: 400px; margin: 0 auto; }
-        label { margin-bottom: 5px; font-weight: bold; }
-        input { padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        input:focus { outline: 2px solid #007bff; }
-        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .result { margin-top: 20px; padding: 10px; background: #f4f4f4; border: 1px solid #ccc; border-radius: 4px; max-width: 800px; margin: 0 auto; white-space: pre-wrap; font-family: monospace; }
-        .error { color: red; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f9f9f9;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        input {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input:focus {
+            outline: 2px solid #07f;
+        }
+        button {
+            padding: 10px;
+            background: #07f;
+            color: #fff;
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #056;
+        }
+        .result {
+            margin: 20px auto 0;
+            padding: 10px;
+            background: #f4f4f4;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-width: 800px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -24,33 +66,37 @@
     <main>
         <form id="orderForm">
             <label for="orderId">Enter Order UID:</label>
-            <input type="text" id="orderId" name="orderId" placeholder="Start typing..." autocomplete="off" required>
+            <input
+                id="orderId"
+                name="orderId"
+                placeholder="Start typing…"
+                autocomplete="off"
+                required
+            >
             <button type="submit">Get Order</button>
         </form>
         <div id="result" class="result" aria-live="polite"></div>
     </main>
-
     <script>
-        document.getElementById('orderForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const orderId = document.getElementById('orderId').value.trim();
-            const resultEl = document.getElementById('result');
-            if (!orderId) {
-                resultEl.textContent = 'Please enter Order UID';
-                resultEl.className = 'result error';
-                return;
-            }
+        const form = document.getElementById('orderForm'),
+              result = document.getElementById('result');
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = form.orderId.value.trim();
+            if (!id) return show('Please enter Order UID', 1);
+
             try {
-                const response = await fetch(`/order/${encodeURIComponent(orderId)}`);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                resultEl.textContent = JSON.stringify(data, null, 2);
-                resultEl.className = 'result';
-            } catch (error) {
-                resultEl.textContent = 'Error: ' + error.message;
-                resultEl.className = 'result error';
+                const res = await fetch(`/order/${encodeURIComponent(id)}`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                show(JSON.stringify(await res.json(), null, 2));
+            } catch (err) {
+                show('Error: ' + err.message, 1);
             }
         });
+        function show(txt, err) {
+            result.textContent = txt;
+            result.className = 'result' + (err ? ' error' : '');
+        }
     </script>
 </body>
 </html>

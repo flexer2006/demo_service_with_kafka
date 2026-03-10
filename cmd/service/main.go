@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/di"
+	"github.com/flexer2006/orders-api/internal/di"
 )
 
 func main() {

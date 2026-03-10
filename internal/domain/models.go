@@ -4,10 +4,10 @@ import "time"
 
 type Order struct {
 	Raw               []byte    `json:"-" db:"raw"`
+	Items             []Item    `json:"items"`
 	DateCreated       time.Time `json:"date_created" db:"date_created"`
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
-	Items             []Item    `json:"items"`
 	OrderUID          string    `json:"order_uid" db:"order_uid"`
 	TrackNumber       string    `json:"track_number" db:"track_number"`
 	Entry             string    `json:"entry" db:"entry"`
@@ -46,8 +46,8 @@ type Payment struct {
 	DeliveryCost float64   `json:"delivery_cost" db:"delivery_cost"`
 	GoodsTotal   float64   `json:"goods_total" db:"goods_total"`
 	CustomFee    float64   `json:"custom_fee" db:"custom_fee"`
-	ID           int64     `json:"-" db:"id"`
 	PaymentDt    int64     `json:"payment_dt" db:"payment_dt"`
+	ID           int64     `json:"-" db:"id"`
 }
 
 type Item struct {

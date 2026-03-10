@@ -21,13 +21,11 @@ type MigrationRunner struct {
 
 func NewMigrationRunner(dsn, migrationsPath string) (*MigrationRunner, error) {
 	sourceURL := fmt.Sprintf("file://%s", migrationsPath)
-
 	m, err := migrate.New(sourceURL, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrMigrationInit, err)
 	}
-
-	return &MigrationRunner{migrator: m}, nil
+	return new(MigrationRunner{migrator: m}), nil
 }
 
 func (mr *MigrationRunner) Up() error {
@@ -56,13 +54,11 @@ func (mr *MigrationRunner) Version() (uint, bool, error) {
 		}
 		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
 	}
-
 	return version, dirty, nil
 }
 
 func (mr *MigrationRunner) Close() error {
 	sourceErr, databaseErr := mr.migrator.Close()
-
 	if sourceErr != nil && databaseErr != nil {
 		return fmt.Errorf("%w: source error: %w, database error: %w", ErrMigrationClose, sourceErr, databaseErr)
 	}

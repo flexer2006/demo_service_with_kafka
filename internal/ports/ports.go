@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/domain"
+	"github.com/flexer2006/orders-api/internal/domain"
 	"github.com/gofiber/fiber/v3"
 )
 

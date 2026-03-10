@@ -3,7 +3,7 @@ package logger
 import (
 	"context"
 
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/config"
+	"github.com/flexer2006/orders-api/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -64,13 +64,13 @@ func (z *ZapLogger) Fatal(msg string, fields ...any) { z.Sugared.Fatalw(msg, fie
 
 func (z *ZapLogger) WithField(key string, value any) Logger {
 	newLogger := z.Logger.With(zap.Any(key, value))
-	return &ZapLogger{Logger: newLogger, Sugared: newLogger.Sugar()}
+	return new(ZapLogger{Logger: newLogger, Sugared: newLogger.Sugar()})
 }
 
 func (z *ZapLogger) WithContext(ctx context.Context) Logger {
 	if traceID, ok := ctx.Value(TraceIDKey).(string); ok {
 		newLogger := z.Logger.With(zap.String(TraceIDKey, traceID))
-		return &ZapLogger{Logger: newLogger, Sugared: newLogger.Sugar()}
+		return new(ZapLogger{Logger: newLogger, Sugared: newLogger.Sugar()})
 	}
 	return z
 }
@@ -93,5 +93,5 @@ func NewZapLoggerFromConfig(cfg config.LoggerConfig) Logger {
 		ErrorOutputPaths: cfg.ErrorPaths,
 	}
 	zapLogger := zap.Must(zapConfig.Build())
-	return &ZapLogger{Logger: zapLogger, Sugared: zapLogger.Sugar()}
+	return new(ZapLogger{Logger: zapLogger, Sugared: zapLogger.Sugar()})
 }

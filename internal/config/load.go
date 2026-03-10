@@ -110,7 +110,7 @@ func setDefaults(vpr *viper.Viper) {
 }
 
 func setDatabaseDefaults(vpr *viper.Viper) {
-	defaults := map[string]interface{}{
+	defaults := map[string]any{
 		"database.driver":             "postgres",
 		"database.host":               "localhost",
 		"database.port":               5432,
@@ -132,7 +132,7 @@ func setDatabaseDefaults(vpr *viper.Viper) {
 }
 
 func setServerDefaults(vpr *viper.Viper) {
-	defaults := map[string]interface{}{
+	defaults := map[string]any{
 		"server.host":             "0.0.0.0",
 		"server.port":             8080,
 		"server.timeout":          "5s",
@@ -147,7 +147,7 @@ func setServerDefaults(vpr *viper.Viper) {
 }
 
 func setKafkaDefaults(vpr *viper.Viper) {
-	defaults := map[string]interface{}{
+	defaults := map[string]any{
 		"kafka.brokers":            []string{"localhost:9092"},
 		"kafka.topic":              "orders",
 		"kafka.group_id":           "order-service-group",
@@ -167,7 +167,7 @@ func setKafkaDefaults(vpr *viper.Viper) {
 }
 
 func setLoggerDefaults(vpr *viper.Viper) {
-	defaults := map[string]interface{}{
+	defaults := map[string]any{
 		"logger.level":                 "info",
 		"logger.development":           false,
 		"logger.encoding":              "json",

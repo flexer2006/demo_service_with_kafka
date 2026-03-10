@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/domain"
-	"github.com/flexer2006/l0-wb-techno-school-go/internal/logger"
+	"github.com/flexer2006/orders-api/internal/domain"
+	"github.com/flexer2006/orders-api/internal/logger"
 )
 
 var (
@@ -30,12 +30,10 @@ func validateDelivery(delivery *domain.Delivery, log logger.Logger) error {
 		log.Warn("delivery is nil")
 		return ErrInvalidDelivery
 	}
-
 	requiredFields := []string{
 		delivery.Name, delivery.Phone, delivery.Zip,
 		delivery.City, delivery.Address, delivery.Region, delivery.Email,
 	}
-
 	if slices.Contains(requiredFields, "") {
 		log.Warn("incomplete delivery fields")
 		return ErrInvalidDelivery
@@ -48,18 +46,15 @@ func validatePayment(payment *domain.Payment, log logger.Logger) error {
 		log.Warn("payment is nil")
 		return ErrInvalidPayment
 	}
-
 	if payment.Transaction == "" || payment.Currency == "" ||
 		payment.Provider == "" || payment.Bank == "" {
 		log.Warn("invalid payment string fields")
 		return ErrInvalidPayment
 	}
-
 	if payment.PaymentDt <= 0 {
 		log.Warn("invalid payment timestamp")
 		return ErrInvalidPayment
 	}
-
 	amounts := []float64{
 		payment.Amount, payment.DeliveryCost,
 		payment.GoodsTotal, payment.CustomFee,
@@ -79,17 +74,14 @@ func validateItems(orderUID string, items []domain.Item, log logger.Logger) erro
 			log.Warn("invalid item chrt_id", "order_uid", orderUID, "index", itemIndex, "chrt_id", item.ChrtID)
 			return ErrInvalidItem
 		}
-
 		if item.Name == "" {
 			log.Warn("invalid item name", "order_uid", orderUID, "index", itemIndex)
 			return ErrInvalidItem
 		}
-
 		if item.Price < minPositiveValue || item.TotalPrice < minPositiveValue {
 			log.Warn("invalid item price", "order_uid", orderUID, "index", itemIndex, "price", item.Price, "total_price", item.TotalPrice)
 			return ErrInvalidItem
 		}
-
 		if item.Sale < minPositiveValue || item.Sale > maxSalePercent || item.Status < minPositiveValue {
 			log.Warn("invalid item sale or status", "order_uid", orderUID, "index", itemIndex, "sale", item.Sale, "status", item.Status)
 			return ErrInvalidItem
@@ -103,21 +95,17 @@ func ValidateOrder(order *domain.Order, log logger.Logger) error {
 		log.Warn("attempt to validate nil order")
 		return fmt.Errorf("order nil: %w", ErrOrderNil)
 	}
-
 	if order.OrderUID == "" {
 		log.Warn("invalid order: empty order_uid")
 		return ErrInvalidOrderUID
 	}
-
 	now := time.Now().UTC()
 	orderTime := order.DateCreated.UTC()
 	futureLimit := now.Add(timeTolerance)
-
 	if orderTime.IsZero() {
 		log.Warn("invalid order: zero date_created", "order_uid", order.OrderUID)
 		return ErrInvalidDate
 	}
-
 	if orderTime.After(futureLimit) {
 		log.Warn("invalid order: date_created too far in future",
 			"order_uid", order.OrderUID,
@@ -126,7 +114,6 @@ func ValidateOrder(order *domain.Order, log logger.Logger) error {
 			"tolerance_minutes", timeTolerance.Minutes())
 		return ErrInvalidDate
 	}
-
 	if err := validateDelivery(order.Delivery, log); err != nil {
 		return err
 	}
@@ -136,7 +123,6 @@ func ValidateOrder(order *domain.Order, log logger.Logger) error {
 	if err := validateItems(order.OrderUID, order.Items, log); err != nil {
 		return err
 	}
-
 	log.Debug("order validated successfully", "order_uid", order.OrderUID, "order_time", orderTime)
 	return nil
 }

@@ -1,5 +1,4 @@
 BEGIN;
-
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -7,7 +6,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TABLE IF NOT EXISTS orders (
     order_uid TEXT PRIMARY KEY CHECK (LENGTH(order_uid) > 0),
     track_number TEXT,
@@ -24,12 +22,9 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_track_number ON orders (track_number) WHERE track_number IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_orders_date_created ON orders (date_created);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders (customer_id);
-
 CREATE TABLE IF NOT EXISTS delivery (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_uid TEXT NOT NULL UNIQUE REFERENCES orders(order_uid) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -41,7 +36,6 @@ CREATE TABLE IF NOT EXISTS delivery (
     region TEXT,
     email TEXT
 );
-
 CREATE TABLE IF NOT EXISTS payment (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_uid TEXT NOT NULL UNIQUE REFERENCES orders(order_uid) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -57,7 +51,6 @@ CREATE TABLE IF NOT EXISTS payment (
     goods_total NUMERIC(14,2) CHECK (goods_total >= 0),
     custom_fee NUMERIC(14,2) CHECK (custom_fee >= 0)
 );
-
 CREATE TABLE IF NOT EXISTS items (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_uid TEXT NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -73,12 +66,9 @@ CREATE TABLE IF NOT EXISTS items (
     brand TEXT,
     status INTEGER
 );
-
 CREATE INDEX IF NOT EXISTS idx_items_order_uid ON items (order_uid);
 CREATE INDEX IF NOT EXISTS idx_items_nm_id ON items (nm_id);
 CREATE INDEX IF NOT EXISTS idx_items_chrt_id ON items (chrt_id);
-
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 COMMIT;

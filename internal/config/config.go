@@ -3,10 +3,10 @@ package config
 import "time"
 
 type Config struct {
-	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
-	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
-	Kafka    KafkaConfig    `yaml:"kafka" mapstructure:"kafka"`
 	Logger   LoggerConfig   `yaml:"logger" mapstructure:"logger"`
+	Database DatabaseConfig `yaml:"database" mapstructure:"database"`
+	Kafka    KafkaConfig    `yaml:"kafka" mapstructure:"kafka"`
+	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
 	Shutdown ShutdownConfig `yaml:"shutdown" mapstructure:"shutdown"`
 }
 
@@ -50,11 +50,11 @@ type KafkaConfig struct {
 }
 
 type LoggerConfig struct {
+	Encoder     Encoder  `yaml:"encoder" mapstructure:"encoder"`
 	OutputPaths []string `yaml:"output_paths" mapstructure:"output_paths"`
 	ErrorPaths  []string `yaml:"error_output_paths" mapstructure:"error_output_paths"`
 	Level       string   `yaml:"level" mapstructure:"level"`
 	Encoding    string   `yaml:"encoding" mapstructure:"encoding"`
-	Encoder     Encoder  `yaml:"encoder" mapstructure:"encoder"`
 	Development bool     `yaml:"development" mapstructure:"development"`
 }
 

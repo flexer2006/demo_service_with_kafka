@@ -1,8 +1,9 @@
-module github.com/flexer2006/l0-wb-techno-school-go
+module github.com/flexer2006/orders-api
 
-go 1.25.0
+go 1.26.1
 
 require (
+	github.com/flexer2006/orders-api v0.0.0-20260221174529-0fbd036927c7
 	github.com/gofiber/fiber/v3 v3.0.0-rc.1
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/jackc/pgx/v5 v5.7.5
@@ -31,7 +32,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
-	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
